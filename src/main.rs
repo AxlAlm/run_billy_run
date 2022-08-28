@@ -1,22 +1,14 @@
-extern crate piston_window;
-
-use piston_window::*;
+use bevy::prelude::*;
 
 fn main() {
-    let mut window: PistonWindow = WindowSettings::new("Hello Piston!", [640, 480])
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
-
-    while let Some(event) = window.next() {
-        window.draw_2d(&event, |context, graphics, _device| {
-            clear([1.0; 4], graphics);
-            rectangle(
-                [1.0, 0.0, 0.0, 1.0], // red
-                [0.0, 0.0, 100.0, 100.0],
-                context.transform,
-                graphics,
-            );
-        });
-    }
+    App::new()
+        .insert_resource(ClearColor(Color::WHITE))
+        .insert_resource(WindowDescriptor {
+            title: "Rust Invaders!".to_string(),
+            width: 598.0,
+            height: 600.0,
+            ..Default::default()
+        })
+        .add_plugins(DefaultPlugins)
+        .run();
 }
