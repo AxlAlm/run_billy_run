@@ -13,7 +13,7 @@ pub struct WinSize {
     height: f32,
 }
 
-pub struct GameTexture {
+pub struct GameTextures {
     billy: Handle<Image>,
 }
 
@@ -28,6 +28,7 @@ fn main() {
         })
         .add_startup_system(setup_camera)
         .add_startup_system(setup_window)
+        .add_startup_system(setup_game_textures)
         .add_startup_system_to_stage(StartupStage::PostStartup, spawn_billy)
         .add_system(billy_movement)
         .add_plugins(DefaultPlugins)
@@ -50,11 +51,19 @@ fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
     commands.insert_resource(win_size)
 }
 
-fn spawn_billy(mut commands: Commands, assert_server: Res<AssetServer>, win_size: Res<WinSize>) {
+fn setup_game_textures(mut commands: Commands, assert_server: Res<AssetServer>) {
+    // camera
+    let game_textures = GameTextures {
+        billy: assert_server.load(BILLY_SPRITE),
+    };
+    commands.insert_resource(game_textures)
+}
+
+fn spawn_billy(mut commands: Commands, game_textures: Res<GameTextures>, win_size: Res<WinSize>) {
     let bottom = -win_size.height / 2.;
     commands
         .spawn_bundle(SpriteBundle {
-            texture: assert_server.load(BILLY_SPRITE),
+            texture: game_textures.billy.clone(),
             transform: Transform {
                 translation: Vec3::new(0.0, bottom + (win_size.height * 0.7), 10.0), //
                 scale: Vec3::new(BILLY_SCALE, BILLY_SCALE, 1.0),
