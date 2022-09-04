@@ -79,16 +79,17 @@ fn setup(
 //     }
 // }
 
-fn update_animation(
+fn get_new_animation_index(
+    timer: &Mut<AnimationTimer>,
     animatio_index_1: usize,
     animatio_index_2: usize,
     sprite_index: usize,
 ) -> usize {
     // timer.tick(time.delta());
 
-    // if !timer.just_finished() {
-    //     return sprite_index;
-    // }
+    if !timer.just_finished() {
+        return sprite_index;
+    }
 
     if sprite_index == animatio_index_1 {
         return animatio_index_2;
@@ -97,11 +98,28 @@ fn update_animation(
     }
 }
 
+// fn update_animation(
+//     timer: &Mut<AnimationTimer>,
+//     animatio_index_1: usize,
+//     animatio_index_2: usize,
+//     sprite: usize,
+// ) -> usize {
+//     // timer.tick(time.delta());
+
+//     if !timer.just_finished() {
+//         return sprite_index;
+//     }
+
+//     if sprite.index == animatio_index_1 {
+//         return animatio_index_2;
+//     } else {
+//         return animatio_index_1;
+//     }
+// }
+
 fn billy_movement(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
-    // texture_atlases: Res<Assets<TextureAtlas>>,
-    // mut position: Query<&mut Transform, With<Billy>>,
     mut query: Query<(
         &mut Transform,
         &mut TextureAtlasSprite,
@@ -111,37 +129,21 @@ fn billy_movement(
 ) {
     for (mut transform, mut sprite, _, mut timer) in &mut query {
         timer.tick(time.delta());
-
+        let timer_ref = &timer;
+        // if else for non-diagonal movements
+        // only if blocks if we want to allow diagonal movements
         if keyboard_input.pressed(KeyCode::Left) {
             transform.translation.x -= BILLY_MOVEMENT_SPEED;
-
-            if timer.just_finished() {
-                sprite.index = update_animation(3, 5, sprite.index);
-            }
-        }
-
-        if keyboard_input.pressed(KeyCode::Right) {
+            sprite.index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
+        } else if keyboard_input.pressed(KeyCode::Right) {
             transform.translation.x += BILLY_MOVEMENT_SPEED;
-
-            if timer.just_finished() {
-                sprite.index = update_animation(6, 8, sprite.index);
-            }
-        }
-
-        if keyboard_input.pressed(KeyCode::Down) {
+            sprite.index = get_new_animation_index(timer_ref, 6, 8, sprite.index);
+        } else if keyboard_input.pressed(KeyCode::Down) {
             transform.translation.y -= BILLY_MOVEMENT_SPEED;
-
-            if timer.just_finished() {
-                sprite.index = update_animation(0, 2, sprite.index);
-            }
-        }
-
-        if keyboard_input.pressed(KeyCode::Up) {
+            sprite.index = get_new_animation_index(timer_ref, 0, 2, sprite.index);
+        } else if keyboard_input.pressed(KeyCode::Up) {
             transform.translation.y += BILLY_MOVEMENT_SPEED;
-
-            if timer.just_finished() {
-                sprite.index = update_animation(9, 11, sprite.index);
-            }
+            sprite.index = get_new_animation_index(timer_ref, 9, 11, sprite.index);
         }
     }
 }
