@@ -4,7 +4,4 @@ use bevy::prelude::Component;
 pub struct Billy;
 
 #[derive(Component)]
-pub struct Position {
-    pub x: f32,
-    pub y: f32,
-}
+pub struct Lava;
