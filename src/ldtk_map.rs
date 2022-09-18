@@ -11,6 +11,8 @@ use bevy::{
     prelude::*,
 };
 
+use ldtk_rust::{Project, TilesetDefinition};
+
 #[derive(Default)]
 pub struct LdtkPlugin;
 
@@ -44,6 +46,33 @@ pub struct LdtkMapBundle {
 
 pub struct LdtkLoader;
 
+// Result<_,sarde_json::Error>
+// Result<Project, String>
+// Result<Project, Error>
+fn load_ldtk_project(bytes: &[u8]) -> Result<Project, serde_json::Error> {
+    let project: Project = serde_json::from_slice(bytes)?;
+    Ok(project)
+}
+
+fn load_tilesets<'a>(project: &Project, load_context: &LoadContext) -> Vec<(i64, AssetPath<'a>)> {
+    // set dependecies
+    return project
+        .defs
+        .tilesets
+        .iter()
+        .filter_map(|tileset| {
+            if let Some(rel_path) = &tileset.rel_path {
+                Some((
+                    tileset.uid,
+                    load_context.path().parent().unwrap().join(rel_path).into(),
+                ))
+            } else {
+                None
+            }
+        })
+        .collect();
+}
+
 impl AssetLoader for LdtkLoader {
     fn load<'a>(
         &'a self,
@@ -51,33 +80,30 @@ impl AssetLoader for LdtkLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
-            let project: ldtk_rust::Project = serde_json::from_slice(bytes)?;
-            let dependencies: Vec<(i64, AssetPath)> = project
-                .defs
-                .tilesets
+            // laod project
+            let project = load_ldtk_project(bytes)?;
+            let tilesets = load_tilesets(&project, &load_context);
+
+            println!("{:?}", tilesets);
+
+            // HashMap<i64, Handle<Image>>
+            //Vec<(i64, Handle<Image>)
+            let tilesetsx: HashMap<i64, Handle<Image>> = tilesets
                 .iter()
-                .filter_map(|tileset| {
-                    if let Some(rel_path) = &tileset.rel_path {
-                        Some((
-                            tileset.uid,
-                            load_context.path().parent().unwrap().join(rel_path).into(),
-                        ))
-                    } else {
-                        None
-                    }
-                })
+                .map(|dep| (dep.0, load_context.get_handle(dep.1.clone())))
                 .collect();
+
+            println!("{:?}", tilesetsx);
 
             let loaded_asset = LoadedAsset::new(LdtkMap {
                 project,
-                tilesets: dependencies
-                    .iter()
-                    .map(|dep| (dep.0, load_context.get_handle(dep.1.clone())))
-                    .collect(),
+                tilesets: tilesetsx,
             });
+
             load_context.set_default_asset(
-                loaded_asset.with_dependencies(dependencies.iter().map(|x| x.1.clone()).collect()),
+                loaded_asset.with_dependencies(tilesets.iter().map(|x| x.1.clone()).collect()),
             );
+
             Ok(())
         })
     }
@@ -99,15 +125,12 @@ pub fn process_loaded_tile_maps(
     for event in map_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
-                log::info!("Map added!");
                 changed_maps.push(handle.clone());
             }
             AssetEvent::Modified { handle } => {
-                log::info!("Map changed!");
                 changed_maps.push(handle.clone());
             }
             AssetEvent::Removed { handle } => {
-                log::info!("Map removed!");
                 // if mesh was modified and removed in the same update, ignore the modification
                 // events are ordered so future modification events are ok
                 changed_maps = changed_maps

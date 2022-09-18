@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::*;
 
-use crate::ldtk::*;
+use crate::ldtk_map::*;
 
 use bevy::{asset::AssetServerSettings, render::texture::ImageSettings};
 
@@ -10,8 +10,7 @@ use billy::BillyPlugin;
 
 mod billy;
 mod components;
-mod lava;
-mod ldtk;
+mod ldtk_map;
 
 const TILE_SIZE: f32 = 0.05;
 // const WINDOW_HEIGHT: f32 = 600.0;
@@ -33,33 +32,15 @@ pub struct WinSize {
     height: f32,
 }
 
-pub struct GameTextures {
-    billy: Handle<Image>,
-    lava: Handle<Image>,
+// pub struct GameTextures {
+//     billy: Handle<Image>,
+//     lava: Handle<Image>,
+// }
+
+fn setup_camera(mut commands: Commands) {
+    // camera
+    commands.spawn_bundle(Camera2dBundle::default());
 }
-
-// fn main() {
-//     App::new()
-//         .insert_resource(ClearColor(Color::WHITE))
-//         .insert_resource(WindowDescriptor {
-//             title: "Run Billy Run!".to_string(),
-//             width: WINDOW_WIDTH,
-//             height: WINDOW_HEIGHT,
-//             ..Default::default()
-//         })
-//         .add_plugins(DefaultPlugins)
-//         .add_plugin(BillyPlugin)
-//         .add_plugin(LavaPlugin)
-//         .add_startup_system(setup_camera)
-//         .add_startup_system(setup_window)
-//         .add_startup_system(setup_game_textures)
-//         .run();
-// }
-
-// fn setup_camera(mut commands: Commands) {
-//     // camera
-//     commands.spawn_bundle(Camera2dBundle::default());
-// }
 
 fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
     // camera
@@ -86,11 +67,8 @@ fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
 //     commands.insert_resource(game_textures)
 // }
 
-fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(Camera2dBundle::default());
-
+fn setup_map(mut commands: Commands, asset_server: Res<AssetServer>) {
     let handle: Handle<LdtkMap> = asset_server.load("billy_map.ldtk");
-
     commands.spawn().insert_bundle(LdtkMapBundle {
         ldtk_map: handle,
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
@@ -116,7 +94,8 @@ fn main() {
         .add_plugin(TilemapPlugin)
         .add_plugin(LdtkPlugin)
         .add_plugin(BillyPlugin)
-        .add_startup_system(startup)
+        .add_startup_system(setup_camera)
         .add_startup_system(setup_window)
+        .add_startup_system(setup_map)
         .run();
 }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::components::Billy;
-use crate::{GameTextures, WinSize, BILLY_MOVEMENT_SPEED, BILLY_SCALE};
+use crate::{WinSize, BILLY_MOVEMENT_SPEED, BILLY_SCALE};
 
 pub struct BillyPlugin;
 
@@ -35,7 +35,6 @@ fn setup(
             scale: Vec3::new(1.0, 1.0, 0.0),
             ..Default::default()
         },
-        //transform: Transform::from_scale(Vec3::splat(6.0)),
         ..default()
     };
     sprite_bundle.sprite.index = 1;
@@ -43,41 +42,7 @@ fn setup(
         .spawn_bundle(sprite_bundle)
         .insert(Billy)
         .insert(AnimationTimer(Timer::from_seconds(0.2, true)));
-    //.insert(AnimationTimer(Timer::from_seconds(0.1, true))
-    //);
 }
-
-// fn spawn_billy(mut commands: Commands, game_textures: Res<GameTextures>, win_size: Res<WinSize>) {
-//     let bottom = -win_size.height / 2.;
-//     let start_y_pos = bottom + (win_size.height * 0.7);
-//     commands
-//         .spawn_bundle(SpriteBundle {
-//             texture: game_textures.billy.clone(),
-//             transform: Transform {
-//                 translation: Vec3::new(0.0, start_y_pos, 0.0), //
-//                 scale: Vec3::new(BILLY_SCALE, BILLY_SCALE, 0.0),
-//                 ..Default::default()
-//             },
-//             ..Default::default()
-//         })
-//         .insert(Billy);
-//     //.insert(Position { x: 0.0, y: 0.0 });
-// }
-
-// fn position_translation(win_size: Res<WinSize>, mut q: Query<(&Position, &mut Transform)>) {
-//     fn convert(pos: f32, bound_window: f32, bound_game: f32) -> f32 {
-//         let tile_size = bound_window / bound_game;
-//         pos / bound_game * bound_window - (bound_window / 2.) + (tile_size / 2.)
-//     }
-
-//     for (pos, mut transform) in q.iter_mut() {
-//         transform.translation = Vec3::new(
-//             convert(pos.x, win_size.width, MAP_WIDTH),
-//             convert(pos.y, win_size.height, MAP_HEIGHT),
-//             0.0,
-//         );
-//     }
-// }
 
 fn get_new_animation_index(
     timer: &Mut<AnimationTimer>,
@@ -85,8 +50,6 @@ fn get_new_animation_index(
     animatio_index_2: usize,
     sprite_index: usize,
 ) -> usize {
-    // timer.tick(time.delta());
-
     if !timer.just_finished() {
         return sprite_index;
     }
@@ -97,25 +60,6 @@ fn get_new_animation_index(
         return animatio_index_1;
     }
 }
-
-// fn update_animation(
-//     timer: &Mut<AnimationTimer>,
-//     animatio_index_1: usize,
-//     animatio_index_2: usize,
-//     sprite: usize,
-// ) -> usize {
-//     // timer.tick(time.delta());
-
-//     if !timer.just_finished() {
-//         return sprite_index;
-//     }
-
-//     if sprite.index == animatio_index_1 {
-//         return animatio_index_2;
-//     } else {
-//         return animatio_index_1;
-//     }
-// }
 
 fn billy_movement(
     keyboard_input: Res<Input<KeyCode>>,
