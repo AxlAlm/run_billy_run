@@ -44,6 +44,12 @@ pub struct LdtkMapBundle {
     pub global_transform: GlobalTransform,
 }
 
+pub struct Tileset<'a> {
+    id: i64,
+    path: AssetPath<'a>,
+    data: Handle<Image>,
+}
+
 pub struct LdtkLoader;
 
 // Result<_,sarde_json::Error>
@@ -54,7 +60,39 @@ fn load_ldtk_project(bytes: &[u8]) -> Result<Project, serde_json::Error> {
     Ok(project)
 }
 
-fn load_tilesets<'a>(project: &Project, load_context: &LoadContext) -> Vec<(i64, AssetPath<'a>)> {
+fn _load_tileset(tileset: &TilesetDefinition, load_context: &LoadContext) -> Tileset{
+
+    let path: AssetPath = load_context.path().parent().unwrap().join(tileset.rel_path).into();
+    let data : Handle<Image> =  load_context.get_handle(x.1.clone());
+    let tileset = Tileset {
+                id :tileset.uid,
+                path:path,
+                data: data
+    };
+
+    tileset
+
+};
+
+fn _get_tilesets<'a>(project: &Project, load_context: &LoadContext) -> Vec<Tileset<'a>> {
+    // set dependecies
+    let tilesets = Vec::new();
+
+    for tileset in project.defs.tilesets.iter() {
+
+        if let Some(tileset) = &tileset.rel_path {
+            continue;
+        }
+
+        tilesets.push(_load_tileset(&tileset, load_context));
+    }
+    tilesets
+}
+
+fn get_tileset_paths<'a>(
+    project: &Project,
+    load_context: &LoadContext,
+) -> Vec<(i64, AssetPath<'a>)> {
     // set dependecies
     return project
         .defs
@@ -73,6 +111,16 @@ fn load_tilesets<'a>(project: &Project, load_context: &LoadContext) -> Vec<(i64,
         .collect();
 }
 
+fn load_tilesets(
+    tilesets: &Vec<(i64, AssetPath)>,
+    load_context: &LoadContext,
+) -> HashMap<i64, Handle<Image>> {
+    return tilesets
+        .iter()
+        .map(|x| (x.0, load_context.get_handle(x.1.clone())))
+        .collect();
+}
+
 impl AssetLoader for LdtkLoader {
     fn load<'a>(
         &'a self,
@@ -80,28 +128,27 @@ impl AssetLoader for LdtkLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
+
+
+
             // laod project
             let project = load_ldtk_project(bytes)?;
-            let tilesets = load_tilesets(&project, &load_context);
+            let tilesets_paths = get_tileset_paths(&project, &load_context);
+            let tilesets = load_tilesets(&tilesets_paths, &load_context);
 
+            println!("{:?}", tilesets_paths);
             println!("{:?}", tilesets);
 
-            // HashMap<i64, Handle<Image>>
-            //Vec<(i64, Handle<Image>)
-            let tilesetsx: HashMap<i64, Handle<Image>> = tilesets
-                .iter()
-                .map(|dep| (dep.0, load_context.get_handle(dep.1.clone())))
-                .collect();
-
-            println!("{:?}", tilesetsx);
-
-            let loaded_asset = LoadedAsset::new(LdtkMap {
+            let ldtk_map: LdtkMap = LdtkMap {
                 project,
-                tilesets: tilesetsx,
-            });
+                tilesets: tilesets,
+            };
+
+            let loaded_asset = LoadedAsset::new(ldtk_map);
 
             load_context.set_default_asset(
-                loaded_asset.with_dependencies(tilesets.iter().map(|x| x.1.clone()).collect()),
+                loaded_asset
+                    .with_dependencies(tilesets_paths.iter().map(|x| x.1.clone()).collect()),
             );
 
             Ok(())
@@ -122,14 +169,17 @@ pub fn process_loaded_tile_maps(
     new_maps: Query<&Handle<LdtkMap>, Added<Handle<LdtkMap>>>,
 ) {
     let mut changed_maps = Vec::<Handle<LdtkMap>>::default();
+
     for event in map_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
                 changed_maps.push(handle.clone());
             }
+
             AssetEvent::Modified { handle } => {
                 changed_maps.push(handle.clone());
             }
+
             AssetEvent::Removed { handle } => {
                 // if mesh was modified and removed in the same update, ignore the modification
                 // events are ordered so future modification events are ok
