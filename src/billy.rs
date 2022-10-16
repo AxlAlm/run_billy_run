@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-
 use crate::components::Billy;
 use crate::{WinSize, BILLY_MOVEMENT_SPEED, BILLY_SCALE};
+use bevy::prelude::*;
+use bevy_ecs_ldtk::prelude::*;
 
 pub struct BillyPlugin;
 
@@ -60,6 +60,18 @@ fn get_new_animation_index(
         return animatio_index_1;
     }
 }
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
+pub struct Wall;
+
+#[derive(Clone, Debug, Default, Bundle, LdtkIntCell)]
+pub struct WallBundle {
+    wall: Wall,
+}
+
+//    mut wall_query: Query<(&mut Transform, With<Wall>)>,
+
+fn collision_systemn() {}
 
 fn billy_movement(
     keyboard_input: Res<Input<KeyCode>>,

@@ -1,7 +1,7 @@
+// use crate::ldtk_map::*;
 use bevy::prelude::*;
-use bevy_ecs_tilemap::*;
-
-use crate::ldtk_map::*;
+use bevy_ecs_ldtk::prelude::*;
+// use bevy_ecs_tilemap::*;
 
 use bevy::{asset::AssetServerSettings, render::texture::ImageSettings};
 
@@ -10,7 +10,6 @@ use billy::BillyPlugin;
 
 mod billy;
 mod components;
-mod ldtk_map;
 
 const TILE_SIZE: f32 = 0.05;
 // const WINDOW_HEIGHT: f32 = 600.0;
@@ -58,19 +57,9 @@ fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
     commands.insert_resource(win_size)
 }
 
-// fn setup_game_textures(mut commands: Commands, assert_server: Res<AssetServer>) {
-//     // camera
-//     let game_textures = GameTextures {
-//         billy: assert_server.load(BILLY_SPRITE),
-//         lava: assert_server.load(LAVA_SPRITE),
-//     };
-//     commands.insert_resource(game_textures)
-// }
-
 fn setup_map(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let handle: Handle<LdtkMap> = asset_server.load("billy_map.ldtk");
-    commands.spawn().insert_bundle(LdtkMapBundle {
-        ldtk_map: handle,
+    commands.spawn_bundle(LdtkWorldBundle {
+        ldtk_handle: asset_server.load("billy_map.ldtk"),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..Default::default()
     });
@@ -91,11 +80,13 @@ fn main() {
         })
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        .add_plugin(TilemapPlugin)
+        // .add_plugin(TilemapPlugin)
         .add_plugin(LdtkPlugin)
         .add_plugin(BillyPlugin)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_window)
         .add_startup_system(setup_map)
+        .insert_resource(LevelSelection::Index(0))
+        .register_ldtk_int_cell::<billy::WallBundle>(1)
         .run();
 }
