@@ -1,7 +1,7 @@
 use crate::components::Billy;
-use crate::{WinSize, BILLY_MOVEMENT_SPEED, BILLY_SCALE};
+use crate::map::ObstacleCoords;
+use crate::{WinSize, BILLY_MOVEMENT_SPEED};
 use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
 
 pub struct BillyPlugin;
 
@@ -61,21 +61,10 @@ fn get_new_animation_index(
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
-pub struct Wall;
-
-#[derive(Clone, Debug, Default, Bundle, LdtkIntCell)]
-pub struct WallBundle {
-    wall: Wall,
-}
-
-//    mut wall_query: Query<(&mut Transform, With<Wall>)>,
-
-fn collision_systemn() {}
-
 fn billy_movement(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
+    obstacles: Res<ObstacleCoords>,
     mut query: Query<(
         &mut Transform,
         &mut TextureAtlasSprite,
@@ -86,11 +75,22 @@ fn billy_movement(
     for (mut transform, mut sprite, _, mut timer) in &mut query {
         timer.tick(time.delta());
         let timer_ref = &timer;
-        // if else for non-diagonal movements
-        // only if blocks if we want to allow diagonal movements
+
         if keyboard_input.pressed(KeyCode::Left) {
-            transform.translation.x -= BILLY_MOVEMENT_SPEED;
-            sprite.index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
+            let x = transform.translation.x - BILLY_MOVEMENT_SPEED;
+            let y = transform.translation.y;
+
+            let coords = (x.floor() as i32, y.ceil() as i32);
+            print!("{:?}", coords);
+            print!("{:?}", obstacles.coords);
+            print!("{:?}", obstacles.coords.contains(&coords));
+            if !obstacles.coords.contains(&coords) {
+                transform.translation.x = x;
+                sprite.index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
+            }
+
+            // transform.translation.x = x;
+            // sprite.index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
         } else if keyboard_input.pressed(KeyCode::Right) {
             transform.translation.x += BILLY_MOVEMENT_SPEED;
             sprite.index = get_new_animation_index(timer_ref, 6, 8, sprite.index);
@@ -103,3 +103,44 @@ fn billy_movement(
         }
     }
 }
+
+// fn billy_movement(
+//     keyboard_input: Res<Input<KeyCode>>,
+//     time: Res<Time>,
+//     obstacles: Res<ObstacleCoords>,
+//     mut query: Query<(
+//         &mut Transform,
+//         &mut TextureAtlasSprite,
+//         With<Billy>,
+//         &mut AnimationTimer,
+//     )>,
+// ) {
+//     for (mut transform, mut sprite, _, mut timer) in &mut query {
+//         timer.tick(time.delta());
+//         let timer_ref = &timer;
+
+//         let mut x: f32 = transform.translation.x;
+//         let mut y: f32 = transform.translation.y;
+//         let mut sprite_index: usize = sprite.index;
+
+//         if keyboard_input.pressed(KeyCode::Left) {
+//             x = -BILLY_MOVEMENT_SPEED;
+//             sprite_index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
+//         } else if keyboard_input.pressed(KeyCode::Right) {
+//             x = BILLY_MOVEMENT_SPEED;
+//             sprite_index = get_new_animation_index(timer_ref, 6, 8, sprite.index);
+//         } else if keyboard_input.pressed(KeyCode::Down) {
+//             y = -BILLY_MOVEMENT_SPEED;
+//             sprite_index = get_new_animation_index(timer_ref, 0, 2, sprite.index);
+//         } else if keyboard_input.pressed(KeyCode::Up) {
+//             y = BILLY_MOVEMENT_SPEED;
+//             sprite_index = get_new_animation_index(timer_ref, 9, 11, sprite.index);
+//         }
+//         keyboard_input.pressed
+
+//         // println!("{:?}", (x, y, sprite_index));
+//         // transform.translation.x += x;
+//         // transform.translation.y += y;
+//         // sprite.index = sprite_index;
+//     }
+// }

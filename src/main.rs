@@ -1,15 +1,12 @@
-// use crate::ldtk_map::*;
 use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
-// use bevy_ecs_tilemap::*;
-
 use bevy::{asset::AssetServerSettings, render::texture::ImageSettings};
 
 use billy::BillyPlugin;
-//use lava::LavaPlugin;
+use map::MapPlugin;
 
 mod billy;
 mod components;
+mod map;
 
 const TILE_SIZE: f32 = 0.05;
 // const WINDOW_HEIGHT: f32 = 600.0;
@@ -20,9 +17,6 @@ const BILLY_MOVEMENT_SPEED: f32 = 2.0;
 // // const BILLY_SIZE: (f32, f32) = (100.0, 100.0);
 const BILLY_SCALE: f32 = TILE_SIZE;
 
-// println!(TILE_SIZE);
-// const LAVA_SPRITE: &str = "lava2.png";
-
 // const MAP_HEIGHT: f32 = 1000.0;
 // const MAP_WIDTH: f32 = 600.0;
 
@@ -30,11 +24,6 @@ pub struct WinSize {
     width: f32,
     height: f32,
 }
-
-// pub struct GameTextures {
-//     billy: Handle<Image>,
-//     lava: Handle<Image>,
-// }
 
 fn setup_camera(mut commands: Commands) {
     // camera
@@ -57,21 +46,13 @@ fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
     commands.insert_resource(win_size)
 }
 
-fn setup_map(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(LdtkWorldBundle {
-        ldtk_handle: asset_server.load("billy_map.ldtk"),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..Default::default()
-    });
-}
-
 fn main() {
     App::new()
         .insert_resource(ImageSettings::default_nearest()) // prevents blurry sprites
         .insert_resource(WindowDescriptor {
             width: 512.0,
             height: 512.0,
-            title: String::from("LDTK Example"),
+            title: String::from("Run Billy Run"),
             ..Default::default()
         })
         .insert_resource(AssetServerSettings {
@@ -80,13 +61,9 @@ fn main() {
         })
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        // .add_plugin(TilemapPlugin)
-        .add_plugin(LdtkPlugin)
-        .add_plugin(BillyPlugin)
         .add_startup_system(setup_camera)
         .add_startup_system(setup_window)
-        .add_startup_system(setup_map)
-        .insert_resource(LevelSelection::Index(0))
-        .register_ldtk_int_cell::<billy::WallBundle>(1)
+        .add_plugin(MapPlugin)
+        .add_plugin(BillyPlugin)
         .run();
 }
