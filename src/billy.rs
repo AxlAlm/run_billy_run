@@ -7,8 +7,8 @@ pub struct BillyPlugin;
 
 impl Plugin for BillyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, setup)
-            .add_system(billy_movement);
+        app.add_startup_system_to_stage(StartupStage::PostStartup, setup);
+        //.add_system(billy_movement);
     }
 }
 

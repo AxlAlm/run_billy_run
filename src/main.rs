@@ -31,13 +31,11 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn setup_window(mut commands: Commands, mut windows: ResMut<Windows>) {
-    // camera
     let window = windows.get_primary_mut().unwrap();
     let win_size = WinSize {
         width: window.width(),
         height: window.height(),
     };
-
     windows
         .get_primary_mut()
         .unwrap()

@@ -9,11 +9,12 @@ pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(LdtkPlugin)
-            .add_startup_system(setup_map)
+            .add_startup_system_to_stage(StartupStage::PreStartup, setup_map)
+            // .add_startup_system(setup_map)
             .insert_resource(LevelSelection::Index(0))
-            .register_ldtk_int_cell::<ObstacleBundle>(1);
-        //.add_startup_system_to_stage(StartupStage::PostStartup, setup_obstacles);
-        //.add_system(setup_obstacles);
+            .register_ldtk_int_cell::<ObstacleBundle>(1)
+            //.add_startup_system_to_stage(StartupStage::PostStartup, setup_obstacles);
+            .add_system(setup_obstacles);
     }
 }
 
