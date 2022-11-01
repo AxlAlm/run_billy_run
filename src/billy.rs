@@ -1,14 +1,17 @@
 use crate::components::Billy;
+use crate::components::{Obstacle, ObstacleBundle, PlayerStart};
 use crate::map::ObstacleCoords;
 use crate::{WinSize, BILLY_MOVEMENT_SPEED};
 use bevy::prelude::*;
+use bevy_ecs_ldtk::prelude::*;
+use std::collections::HashSet;
 
 pub struct BillyPlugin;
 
 impl Plugin for BillyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, setup);
-        //.add_system(billy_movement);
+        app.add_startup_system_to_stage(StartupStage::PostStartup, setup)
+            .add_system(billy_movement);
     }
 }
 
@@ -20,6 +23,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     win_size: Res<WinSize>,
+    player_start_query: Query<&GridCoords, With<PlayerStart>>,
 ) {
     let texture_handle = asset_server.load("shBase_whiteMale.png");
     let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(32.0, 32.0), 3, 4);
@@ -27,6 +31,13 @@ fn setup(
 
     let bottom = -win_size.height / 2.;
     let start_y_pos = bottom + (win_size.height * 0.7);
+
+    print!("{:?}", start_y_pos);
+    println!("{:?}", start_y_pos);
+
+    for player_start in player_start_query.iter() {
+        println!("{:?}", player_start);
+    }
 
     let mut sprite_bundle = SpriteSheetBundle {
         texture_atlas: texture_atlas_handle,
@@ -64,6 +75,8 @@ fn get_new_animation_index(
 fn billy_movement(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
+    obst_query: Query<&GridCoords, With<Obstacle>>,
+    player_start_query: Query<&GridCoords, With<PlayerStart>>,
     obstacles: Res<ObstacleCoords>,
     mut query: Query<(
         &mut Transform,
@@ -76,11 +89,23 @@ fn billy_movement(
         timer.tick(time.delta());
         let timer_ref = &timer;
 
+        // for player_start in player_start_query.iter() {
+        //     println!("{:?}", (player_start.x, player_start.y));
+        //     println!("{:?}", player_start);
+        // }
+
+        // let mut obst = HashSet::new();
+        // for grid_coord in obst_query.iter() {
+        //     obst.insert((grid_coord.x, grid_coord.y));
+        // }
+        //println!("{:?}", obst);
+
         if keyboard_input.pressed(KeyCode::Left) {
             let x = transform.translation.x - BILLY_MOVEMENT_SPEED;
             let y = transform.translation.y;
 
             let coords = (x.floor() as i32, y.ceil() as i32);
+            print!("{:?}", (x, y));
             print!("{:?}", coords);
             print!("{:?}", obstacles.coords);
             print!("{:?}", obstacles.coords.contains(&coords));
