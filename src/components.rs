@@ -17,11 +17,7 @@ pub struct ColliderBundle {
 impl From<EntityInstance> for ColliderBundle {
     fn from(entity_instance: EntityInstance) -> ColliderBundle {
         match entity_instance.identifier.as_ref() {
-            "BillyStart" => ColliderBundle {
-                collider: Collider::capsule_y(12., 12.),
-                rigid_body: RigidBody::Dynamic,
-                ..Default::default()
-            },
+            "BillyStart" => ColliderBundle::default(),
             _ => ColliderBundle::default(),
         }
     }
@@ -31,4 +27,12 @@ impl From<EntityInstance> for ColliderBundle {
 pub struct Player;
 
 #[derive(Default, Bundle, LdtkEntity)]
-pub struct PlayerBundle {}
+pub struct PlayerBundle {
+    #[from_entity_instance]
+    #[bundle]
+    pub collider_bundle: ColliderBundle,
+    pub player: Player,
+
+    #[from_entity_instance]
+    entity_instance: EntityInstance,
+}
