@@ -1,29 +1,34 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use bevy_rapier2d::prelude::*;
 
-#[derive(Component)]
-pub struct Billy;
+#[derive(Clone, Default, Bundle, LdtkIntCell)]
+pub struct ColliderBundle {
+    pub collider: Collider,
+    pub rigid_body: RigidBody,
+    pub velocity: Velocity,
+    pub rotation_constraints: LockedAxes,
+    pub friction: Friction,
+    pub restitution: Restitution,
+    pub mass_properties: ColliderMassProperties,
+    pub force: ExternalForce,
+}
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
-pub struct Obstacle;
-
-#[derive(Clone, Debug, Default, Bundle, LdtkIntCell)]
-pub struct ObstacleBundle {
-    obstacle: Obstacle,
+impl From<EntityInstance> for ColliderBundle {
+    fn from(entity_instance: EntityInstance) -> ColliderBundle {
+        match entity_instance.identifier.as_ref() {
+            "BillyStart" => ColliderBundle {
+                collider: Collider::capsule_y(12., 12.),
+                rigid_body: RigidBody::Dynamic,
+                ..Default::default()
+            },
+            _ => ColliderBundle::default(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
-pub struct PlayerStart {}
+pub struct Player;
 
-#[derive(Clone, Debug, Default, Bundle, LdtkIntCell)]
-pub struct PlayerStartBundle {
-    player_start: PlayerStart,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
-pub struct Goal {}
-
-#[derive(Clone, Debug, Default, Bundle, LdtkIntCell)]
-pub struct GoalBundle {
-    player_start: PlayerStart,
-}
+#[derive(Default, Bundle, LdtkEntity)]
+pub struct PlayerBundle {}
