@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy::render::texture::ImageSettings;
 use bevy_ecs_ldtk::prelude::*;
+use bevy_rapier2d::prelude::*;
+
 mod components;
 
 fn setup_camera(mut commands: Commands) {
@@ -27,7 +29,7 @@ fn spawn_billy(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    players: Query<(Entity, &Transform), (Added<EntityInstance>, With<components::Player>)>,
+    players: Query<(Entity, &Transform), Added<components::Player>>,
 ) {
     for (player, transform) in players.iter() {
         println!("PLAYER: {:?}", player);
@@ -47,8 +49,49 @@ fn spawn_billy(
             ..default()
         };
         sprite_bundle.sprite.index = 1;
-        commands.spawn_bundle(sprite_bundle);
+        commands
+            .entity(player)
+            .insert_bundle(sprite_bundle)
+            .insert(Velocity {
+                linvel: Vec2::new(200.0, 0.0),
+                ..Default::default()
+            })
+            .insert(RigidBody::Fixed)
+            .insert(Collider::cuboid(1.0, 1.0));
         println!("SPAWNING")
+    }
+}
+
+fn spawn_obstacles(
+    mut commands: Commands,
+    obstacles: Query<(&GridCoords, &Transform), Added<components::Obstacle>>,
+) {
+    for (grid_coors, transform) in obstacles.iter() {
+        println!("OBSTACLES: {:?}", grid_coors);
+        println!("TRANSFORM: {:?}", transform);
+
+        commands
+            .spawn()
+            // .insert(components::Obstacle)
+            .insert(RigidBody::Fixed)
+            .insert(Collider::cuboid(1.0, 1.0));
+    }
+}
+
+pub fn movement(
+    input: Res<Input<KeyCode>>,
+    mut query: Query<&mut Velocity, With<components::Player>>,
+) {
+    for mut velocity in query.iter_mut() {
+        println!("VELOCITY: {:?}", velocity);
+
+        velocity.linvel.x = 1.0;
+        velocity.angvel = 1.0;
+
+        // let right = if input.pressed(KeyCode::D) { 1. } else { 1. };
+        // let left = if input.pressed(KeyCode::A) { 1. } else { 1. };
+
+        // velocity.linvel.x = (right - left) * 200.;
     }
 }
 
@@ -57,6 +100,8 @@ fn main() {
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(LdtkPlugin)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(LdtkSettings {
             int_grid_rendering: IntGridRendering::Invisible,
             set_clear_color: SetClearColor::FromLevelBackground,
@@ -69,7 +114,10 @@ fn main() {
         .add_startup_system_to_stage(StartupStage::PreStartup, setup_window)
         .add_startup_system(setup_map)
         .add_system(spawn_billy)
+        .add_system(spawn_obstacles)
+        .add_system(movement)
         .insert_resource(LevelSelection::Index(0))
         .register_ldtk_entity::<components::PlayerBundle>("BillyStart")
+        .register_ldtk_int_cell::<components::ObstacleBundle>(1)
         .run();
 }
