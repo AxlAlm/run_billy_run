@@ -25,6 +25,9 @@ fn setup_map(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 }
 
+#[derive(Component, Deref, DerefMut)]
+struct AnimationTimer(Timer);
+
 fn spawn_billy(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -52,12 +55,10 @@ fn spawn_billy(
         commands
             .entity(player)
             .insert_bundle(sprite_bundle)
-            .insert(Velocity {
-                linvel: Vec2::new(200.0, 0.0),
-                ..Default::default()
-            })
-            .insert(RigidBody::Fixed)
-            .insert(Collider::cuboid(1.0, 1.0));
+            .insert(Velocity::zero())
+            .insert(RigidBody::Dynamic)
+            .insert(Collider::cuboid(1.0, 1.0))
+            .insert(AnimationTimer(Timer::from_seconds(0.2, true)));
         println!("SPAWNING")
     }
 }
@@ -78,20 +79,78 @@ fn spawn_obstacles(
     }
 }
 
-pub fn movement(
-    input: Res<Input<KeyCode>>,
-    mut query: Query<&mut Velocity, With<components::Player>>,
+// pub fn movement(
+//     input: Res<Input<KeyCode>>,
+//     mut query: Query<&mut Velocity, With<components::Player>>,
+// ) {
+//     for mut velocity in query.iter_mut() {
+//         println!("VELOCITY: {:?}", velocity);
+
+//         velocity.linvel.x = 1.0;
+//         velocity.angvel = 1.0;
+
+//         // let right = if input.pressed(KeyCode::D) { 1. } else { 1. };
+//         // let left = if input.pressed(KeyCode::A) { 1. } else { 1. };
+
+//         // velocity.linvel.x = (right - left) * 200.;
+//     }
+// }
+
+fn get_new_animation_index(
+    timer: &Mut<AnimationTimer>,
+    animatio_index_1: usize,
+    animatio_index_2: usize,
+    sprite_index: usize,
+) -> usize {
+    if !timer.just_finished() {
+        return sprite_index;
+    }
+
+    if sprite_index == animatio_index_1 {
+        return animatio_index_2;
+    } else {
+        return animatio_index_1;
+    }
+}
+
+fn player_movement(
+    keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+    mut player_info: Query<
+        (&mut Velocity, &mut AnimationTimer, &mut TextureAtlasSprite),
+        With<components::Player>,
+    >,
 ) {
-    for mut velocity in query.iter_mut() {
-        println!("VELOCITY: {:?}", velocity);
+    for (mut rb_vels, mut timer, mut sprite) in player_info.iter_mut() {
+        timer.tick(time.delta());
+        let timer_ref = &timer;
 
-        velocity.linvel.x = 1.0;
-        velocity.angvel = 1.0;
+        println!("VELOCITY: {:?}", rb_vels);
+        let up = keyboard_input.pressed(KeyCode::W) || keyboard_input.pressed(KeyCode::Up);
+        let down = keyboard_input.pressed(KeyCode::S) || keyboard_input.pressed(KeyCode::Down);
+        let left = keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::Left);
+        let right = keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right);
 
-        // let right = if input.pressed(KeyCode::D) { 1. } else { 1. };
-        // let left = if input.pressed(KeyCode::A) { 1. } else { 1. };
+        let x_axis = -(left as i8) + right as i8;
+        let y_axis = -(down as i8) + up as i8;
 
-        // velocity.linvel.x = (right - left) * 200.;
+        let mut move_delta = Vec2::new(x_axis as f32, y_axis as f32);
+        if move_delta != Vec2::ZERO {
+            move_delta /= move_delta.length();
+        }
+        // Update the velocity on the rigid_body_component,
+        // the bevy_rapier plugin will update the Sprite transform.
+        rb_vels.linvel = move_delta * 100.0;
+
+        if rb_vels.linvel.x > 0.0 {
+            sprite.index = get_new_animation_index(timer_ref, 6, 8, sprite.index);
+        } else if rb_vels.linvel.x < 0.0 {
+            sprite.index = get_new_animation_index(timer_ref, 3, 5, sprite.index);
+        } else if rb_vels.linvel.y > 0.0 {
+            sprite.index = get_new_animation_index(timer_ref, 9, 11, sprite.index);
+        } else if rb_vels.linvel.y < 0.0 {
+            sprite.index = get_new_animation_index(timer_ref, 0, 2, sprite.index);
+        }
     }
 }
 
@@ -100,8 +159,6 @@ fn main() {
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(LdtkPlugin)
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
-        .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(LdtkSettings {
             int_grid_rendering: IntGridRendering::Invisible,
             set_clear_color: SetClearColor::FromLevelBackground,
@@ -115,7 +172,9 @@ fn main() {
         .add_startup_system(setup_map)
         .add_system(spawn_billy)
         .add_system(spawn_obstacles)
-        .add_system(movement)
+        .add_system(player_movement)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(LevelSelection::Index(0))
         .register_ldtk_entity::<components::PlayerBundle>("BillyStart")
         .register_ldtk_int_cell::<components::ObstacleBundle>(1)
